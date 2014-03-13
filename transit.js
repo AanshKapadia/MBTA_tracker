@@ -41,7 +41,7 @@ function renderMap()
 		infowindow.setContent(marker.title);
 		infowindow.open(map, marker);
 	});
- 	renderRedLine();
+ 	renderBlueLine();
 }
 
 function renderRedLine()
@@ -112,6 +112,48 @@ function renderRedLine()
 
   	redPath.setMap(map);
   	redPath2.setMap(map);
+}
+
+function renderBlueLine()
+{
+	var BlueLine = [
+		["Blue Line, Wonderland",42.41342,-70.991648],
+		["Blue Line, Revere Beach",42.40784254,-70.99253321],
+		["Blue Line, Beachmont",42.39754234,-70.99231944],
+		["Blue Line, Suffolk Downs",42.39050067,-70.99712259],
+		["Blue Line, Orient Heights",42.386867,-71.00473599999999],
+		["Blue Line, Wood Island",42.3796403,-71.02286539000001],
+		["Blue Line, Airport",42.374262,-71.030395],
+		["Blue Line, Maverick",42.36911856,-71.03952958000001],
+		["Blue Line, Aquarium",42.359784,-71.051652],
+		["Blue Line, State Street",42.358978,-71.057598],
+		["Blue Line, Government Center",42.359705,-71.05921499999999],
+		["Blue Line, Bowdoin",42.361365,-71.062037]
+	];
+    for (var i = 0; i < BlueLine.length; i++) {  
+      	var marker = new google.maps.Marker({
+        position: new google.maps.LatLng(BlueLine[i][1], BlueLine[i][2]),
+      	});
+      	marker.setMap(map);
+      	infowindow = new google.maps.InfoWindow();
+    	google.maps.event.addListener(marker, 'click', (function(marker, i) {
+        	return function() {
+          		infowindow.setContent(BlueLine[i][0]);
+          		infowindow.open(map, marker);
+        }
+      })(marker, i));
+    }
+	var blueLineCoordinates = [];
+	for(var i = 0; i < BlueLine.length; i++) {
+		blueLineCoordinates.push(new google.maps.LatLng(BlueLine[i][1], BlueLine[i][2]));
+	}
+    var bluePath = new google.maps.Polyline({
+	    path: blueLineCoordinates,
+	    strokeColor: "#FF0000",
+	    strokeOpacity: 1.0,
+	    strokeWeight: 2
+  	});
+  	bluePath.setMap(map);
 }
 
 
