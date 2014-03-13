@@ -32,7 +32,7 @@ function renderMap()
 	map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
 	var marker = new google.maps.Marker({
 		position: me,
-		title: "Aansh Kapadia"
+		title: "I am here at... Latitude: " + myLat + " Longitude: " + myLng
 	});
 	marker.setMap(map);
 	
@@ -41,7 +41,10 @@ function renderMap()
 		infowindow.setContent(marker.title);
 		infowindow.open(map, marker);
 	});
- 	renderBlueLine();
+
+	// renderRedLine();
+	// renderBlueLine();
+ 	renderOrangeLine();
 }
 
 function renderRedLine()
@@ -106,8 +109,8 @@ function renderRedLine()
     var redPath2 = new google.maps.Polyline({
 	    path: RedLineCoordinates2,
 	    strokeColor: "#FF0000",
-	    strokeOpacity: 1.0,
-	    strokeWeight: 2
+	    strokeOpacity: 2.0,
+	    strokeWeight: 3
   	});
 
   	redPath.setMap(map);
@@ -149,11 +152,60 @@ function renderBlueLine()
 	}
     var bluePath = new google.maps.Polyline({
 	    path: blueLineCoordinates,
-	    strokeColor: "#FF0000",
-	    strokeOpacity: 1.0,
-	    strokeWeight: 2
+	    strokeColor: "#0000FF",
+	    strokeOpacity: 2.0,
+	    strokeWeight: 3
   	});
   	bluePath.setMap(map);
 }
+
+function renderOrangeLine()
+{
+	var OrangeLine = [
+		["Orange Line, Oak Grove",42.43668,-71.07109699999999],
+		["Orange Line, Malden Center",42.426632,-71.07411],
+		["Orange Line, Wellington",42.40237,-71.077082],
+		["Orange Line, Sullivan",42.383975,-71.076994],
+		["Orange Line, Community College",42.373622,-71.06953300000001],
+		["Orange Line, North Station",42.365577,-71.06129],
+		["Orange Line, Haymarket",42.363021,-71.05829],
+		["Orange Line, State Street",42.358978,-71.057598],
+		["Orange Line, Downtown Crossing",42.355518,-71.060225],
+		["Orange Line, Chinatown",42.352547,-71.062752],
+		["Orange Line, Tufts Medical",42.349662,-71.063917],
+		["Orange Line, Mass Ave",42.341512,-71.083423],
+		["Orange Line, Ruggles",42.336377,-71.088961],
+		["Orange Line, Roxbury Crossing",42.331397,-71.095451],
+		["Orange Line, Jackson Square",42.323132,-71.099592],
+		["Orange Line, Stony Brook",42.317062,-71.104248],
+		["Orange Line, Green Street",42.310525,-71.10741400000001],
+		["Orange Line, Forest Hills",42.300523,-71.113686]
+	];
+    for (var i = 0; i < OrangeLine.length; i++) {  
+      	var marker = new google.maps.Marker({
+        position: new google.maps.LatLng(OrangeLine[i][1], OrangeLine[i][2]),
+      	});
+      	marker.setMap(map);
+      	infowindow = new google.maps.InfoWindow();
+    	google.maps.event.addListener(marker, 'click', (function(marker, i) {
+        	return function() {
+          		infowindow.setContent(OrangeLine[i][0]);
+          		infowindow.open(map, marker);
+        }
+      })(marker, i));
+    }
+	var orangeLineCoordinates = [];
+	for(var i = 0; i < OrangeLine.length; i++) {
+		orangeLineCoordinates.push(new google.maps.LatLng(OrangeLine[i][1], OrangeLine[i][2]));
+	}
+    var orangePath = new google.maps.Polyline({
+	    path: orangeLineCoordinates,
+	    strokeColor: "#FF9900",
+	    strokeOpacity: 2.0,
+	    strokeWeight: 3
+  	});
+  	orangePath.setMap(map);
+}
+
 
 
