@@ -36,7 +36,7 @@ function renderMap()
 	});
 	marker.setMap(map);
 	
-	var infowindow = new google.maps.InfoWindow();
+	infowindow = new google.maps.InfoWindow();
 	google.maps.event.addListener(marker, 'click', function() {
 		infowindow.setContent(marker.title);
 		infowindow.open(map, marker);
@@ -46,7 +46,7 @@ function renderMap()
 
 function renderRedLine()
 {
-	 var RedLine = [
+	var RedLine = [
 		["Red Line, Alewife", 42.395428,-71.142483],
 		["Red Line, Davis",42.39674,-71.121815],
 		["Red Line, Porter Square",42.3884,-71.11914899999999],
@@ -76,7 +76,7 @@ function renderRedLine()
         position: new google.maps.LatLng(RedLine[i][1], RedLine[i][2]),
       	});
       	marker.setMap(map);
-      	var infowindow = new google.maps.InfoWindow();
+      	infowindow = new google.maps.InfoWindow();
     	google.maps.event.addListener(marker, 'click', (function(marker, i) {
         	return function() {
           		infowindow.setContent(RedLine[i][0]);
@@ -84,4 +84,34 @@ function renderRedLine()
         }
       })(marker, i));
     }
+
+	var RedLineCoordinates = [];
+	var RedLineCoordinates2 = [];
+	for(var i = 0; i < RedLine.length-4; i++) {
+		RedLineCoordinates.push(new google.maps.LatLng(RedLine[i][1], RedLine[i][2]));
+	}
+
+	RedLineCoordinates2.push(new google.maps.LatLng(RedLine[12][1], RedLine[12][2]));
+	for(var i = RedLine.length-4; i < RedLine.length; i++) {
+		RedLineCoordinates2.push(new google.maps.LatLng(RedLine[i][1], RedLine[i][2]));
+	}
+
+    var redPath = new google.maps.Polyline({
+	    path: RedLineCoordinates,
+	    strokeColor: "#FF0000",
+	    strokeOpacity: 1.0,
+	    strokeWeight: 2
+  	});
+
+    var redPath2 = new google.maps.Polyline({
+	    path: RedLineCoordinates2,
+	    strokeColor: "#FF0000",
+	    strokeOpacity: 1.0,
+	    strokeWeight: 2
+  	});
+
+  	redPath.setMap(map);
+  	redPath2.setMap(map);
 }
+
+
