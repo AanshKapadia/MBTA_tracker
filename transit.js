@@ -1,31 +1,28 @@
-function init()
-{
-	getMyLocation();
-}
-
 function getMyLocation()
 {
-	navigator.geolocation.getCurrentPosition(success, error);
+	if(navigator.geolocation){
+		navigator.geolocation.getCurrentPosition(success, error);
+	}
 }
 
 function success(position) 
 {
 	myLat = position.coords.latitude;
 	myLng = position.coords.longitude;
-	renderMap();
+	init();
 }
 
 function error() 
 {
-  
+  alert('GeoLocation not supported');
 }
 
-function renderMap()
+function init()
 {
 	me = new google.maps.LatLng(myLat, myLng);
 	var myOptions = {
 		zoom: 13,
-		center: me,
+		center: new google.maps.LatLng(42.39674,-71.121815),
 		mapTypeId: google.maps.MapTypeId.ROADMAP
 	};
 
@@ -42,9 +39,41 @@ function renderMap()
 		infowindow.open(map, marker);
 	});
 
+	trainInfo();
 	// renderRedLine();
 	// renderBlueLine();
- 	renderOrangeLine();
+ // 	renderOrangeLine();
+}
+
+function trainInfo()
+{
+	xhr = new XMLHttpRequest();
+	xhr.open("GET", "http://mbtamap.herokuapp.com/mapper/rodeo.json", true);
+	xhr.onreadystatechange = dataReady;
+	xhr.send(null);
+}
+function dataReady()
+{
+	console.log("In dataReady, readyState is " + xhr.readyState + " " + xhr.status)
+	if (xhr.readyState == 4 && xhr.status == 200){
+
+		scheduleData = JSON.parse(xhr.responseText);
+		color = scheduleData["line"];
+		if(color == "red") {
+			renderRedLine();
+		} else if(color == "blue") {
+			renderBlueLine();
+		} else {
+			renderOrangeLine();
+		}
+
+	}
+	else if(xhr.readyState == 4 && xhr.status == 500)
+	{
+		alert("500 Error");
+		init();
+	}
+
 }
 
 function renderRedLine()
@@ -73,6 +102,8 @@ function renderRedLine()
 		["Red Line, Shawmut",42.29312583,-71.06573796000001],
 		["Red Line, Ashmont",42.284652,-71.06448899999999]
 	];
+
+
 
     for (var i = 0; i < RedLine.length; i++) {  
       	var marker = new google.maps.Marker({
@@ -184,6 +215,10 @@ function renderOrangeLine()
     for (var i = 0; i < OrangeLine.length; i++) {  
       	var marker = new google.maps.Marker({
         position: new google.maps.LatLng(OrangeLine[i][1], OrangeLine[i][2]),
+        //    icon: {
+        //   path: google.maps.SymbolPath.CIRCLE,
+        //   scale: 10
+        // },
       	});
       	marker.setMap(map);
       	infowindow = new google.maps.InfoWindow();
