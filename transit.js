@@ -12,6 +12,14 @@ var color;
 var myLat;
 var myLng;
 var myLocation;
+var trainLine;
+var numStops;
+var furthest_dist_earth = 25000; //furthest dist between 2 points on earth (in miles)
+
+//toRad function for calculating the closest dist (with haversine formula)
+Number.prototype.toRad = function() {
+        return this * Math.PI / 180;
+}
 
 var RedLine = [
 	["Alewife", 42.395428,-71.142483],
@@ -93,7 +101,7 @@ function getMyLocation()
             myLat = position.coords.latitude;
             myLng = position.coords.longitude;
             myLocation = new google.maps.LatLng(myLat, myLng)
-            // map.panTo(myLocation);
+            map.panTo(myLocation);
             markMe();
         });
 	} else {
@@ -113,16 +121,16 @@ function markMe()
       map: map,
       title: "My Location"
   	});
-
+  	var closest = find_closest_stop();
 	var infowindow = new google.maps.InfoWindow();
 	infowindow.setContent(
-	  "I am here at " + myLat + ", " + myLng + "."
+	  "I am here at " + myLat + ", " + myLng + ". I am approximately " + closest['dist'] +
+	  	" miles from " + closest['t_stop'][0] + ", which is the closest T-Stop."
+	  	  
 	);
-
 	google.maps.event.addListener(marker, 'click', function() {
 	    infowindow.open(map,marker);
 	});
-	google.maps.event.addDomListener(window, 'load', init);
 }
 
 function getData()
@@ -140,16 +148,22 @@ function dataReady()
 		scheduleData = JSON.parse(request.responseText);
 		color = scheduleData["line"];
 		if(color == "red") {
+			trainLine = RedLine;
+			numStops = RedLine.length;
 			renderRedLine();
 		} else if(color == "blue") {
+			trainLine = BlueLine;
+			numStops = BlueLine.length;
 			renderBlueLine();
 		} else {
+			trainLine = OrangeLine;
+			numStops = OrangeLine.length;
 			renderOrangeLine();
 		}
 	}
 	else if(request.readyState == 4 && request.status == 500)
 	{
-		getData();//re-requests data from mbta schedule if there is an error
+		init();//re-requests data from mbta schedule if there is an error
 	}
 }
 
@@ -164,8 +178,8 @@ function renderRedLine()
 	for(var i = 0; i < RedLine.length-4; i++) {
 		RedLineCoordinates.push(new google.maps.LatLng(RedLine[i][1], RedLine[i][2]));
 	}
-
 	RedLineCoordinates2.push(new google.maps.LatLng(RedLine[12][1], RedLine[12][2]));
+	
 	for(var i = RedLine.length-4; i < RedLine.length; i++) {
 		RedLineCoordinates2.push(new google.maps.LatLng(RedLine[i][1], RedLine[i][2]));
 	}
@@ -205,7 +219,7 @@ function createMarker(trainArray, station)
 		img = "red_t.png";
 	} else if (color == "blue"){
 		img = "blue_t.png";
-	}else if (color == "orange"){
+	} else if (color == "orange"){
 		img = "orange_t.png";
 	}
 
@@ -228,7 +242,7 @@ function createTable(trainArray, station_pos)
 	var infoTable = document.createElement("table");
     infoTable = "<div id='name'> Station: " + station;
 
-    //infoTable headers
+    //sets up infoTable headers
     infoTable += "</div><table><tr><th>Line: </th>"
     infoTable += "<th> ID </th><th> Arrives In </th><th> End Destination </th></tr>";
 
@@ -238,13 +252,13 @@ function createTable(trainArray, station_pos)
         var t_stop = data[i]["Predictions"];
         for (var j = 0; j < t_stop.length; j++) {
             if (station == t_stop[j]["Stop"]) {
-                min = Math.floor(t_stop[j]["Seconds"] / 60);
-                sec = t_stop[j]["Seconds"] % 60;
-                sec = ("0" + sec).slice(-2);
+                minutes = Math.floor(t_stop[j]["Seconds"]/60);//gets total minutes
+                seconds = (t_stop[j]["Seconds"] % 60);//gets minutes
+                seconds = ("0" + seconds).slice(-2);
                 infoTable += 
                 	"<tr><td>" + scheduleData["line"] + "</td><td>"
-                  	+ t_stop[j]["StopID"] + "</td><td>"
-                  	+ min + ":" + sec + "</td><td>"
+                  	+ t_stop[j]["StopID"] + "</td><td> "
+                  	+ minutes + ":" + seconds + "</td><td>"
                   	+ data[i]["Destination"] + "</td></tr>";
     	    }
 	    }
@@ -255,6 +269,9 @@ function createTable(trainArray, station_pos)
 
 function createPolyline(coordinates)
 {
+	if (color == "blue") { 
+		color = "3399FF"; //nicer blue color to match PolyLine
+	}
     var polyline = new google.maps.Polyline({
 	    path: coordinates,
 	    strokeColor: color,
@@ -264,3 +281,43 @@ function createPolyline(coordinates)
     polyline.setMap(map);
 }
 
+function find_closest_stop()
+{
+	var temp_closest_stop = "";
+	var temp_closest_dist = furthest_dist_earth;
+	var station_name;
+	var closest =  {"t_stop": temp_closest_stop, "dist": temp_closest_dist}; //will contain the info of the closest stop to users's location
+
+	for (var i = 0; i < numStops; i++) {
+		station_name = trainLine[i];
+		if (calculate_dist(station_name) < temp_closest_dist) {
+			temp_closest_stop = station_name;//replace new closest t_stop
+			temp_closest_dist = calculate_dist(station_name);//replace new closest dist
+		}
+	}
+	closest["t_stop"] = temp_closest_stop;
+	closest["dist"] = Math.round(temp_closest_dist);
+	return closest;
+}
+
+function calculate_dist(station_name)
+{
+    var R = 6371; //earth's radius
+    var km_to_miles = 0.621371; //miles in a kilometer
+
+  	var tempLat = myLat - Number(station_name[1]);
+    var d_lat = tempLat.toRad();
+    var tempLng = myLng - Number(station_name[2]);
+    var d_lng = tempLng.toRad();
+    var lat1 = (Number(station_name[1])).toRad();
+    var lat2 = myLat.toRad();
+    
+    //spherical law of cosines
+    var a = Math.sin(d_lat/2) * Math.sin(d_lat/2) +
+            Math.sin(d_lng/2) * Math.sin(d_lng/2) *
+            Math.cos(lat1) * Math.cos(lat2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));//angular distance in radians
+    var distance = R * c;
+    distance *= km_to_miles; // converts into miles
+    return distance; //returns the distance (in miles)
+}
