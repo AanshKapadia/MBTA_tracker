@@ -1,9 +1,10 @@
-/* Name: Aansh Kapadia
- * Assignment: 3
+/* File: transit.js
+ * Name: Aansh Kapadia
  * Date: 03/11/14
- * What it does: 
- * 	- Finds the User's current position and suggests closest T-station. 
- *	  Also lists the schedule of every train, its destination and arrival time.
+ * Assignment: 3
+ * Summary: 
+ * - Finds the User's current position and suggests closest T-station. 
+ *	 Also lists the schedule of every train line, and its destination and arrival time.
  */
 
 var map;
@@ -13,14 +14,14 @@ var myLat;
 var myLng;
 var myLocation;
 var trainLine;
-var numStops;
-var furthest_dist_earth = 25000; //furthest dist between 2 points on earth (in miles)
+var furthest_dist_earth = 25000; //furthest dist between 2 points on earth (mi)
 
-//toRad function for calculating the closest dist (with haversine formula)
+//The toRad function for calculating the closest dist (with haversine formula)
 Number.prototype.toRad = function() {
         return this * Math.PI / 180;
 }
 
+//The Red Line has 22 stops
 var RedLine = [
 	["Alewife", 42.395428,-71.142483],
 	["Davis",42.39674,-71.121815],
@@ -46,6 +47,7 @@ var RedLine = [
 	["Ashmont",42.284652,-71.06448899999999]
 ];
 
+//The Blue Line has 12 stops
 var BlueLine = [
 	["Wonderland",42.41342,-70.991648],
 	["Revere Beach",42.40784254,-70.99253321],
@@ -61,6 +63,7 @@ var BlueLine = [
 	["Bowdoin",42.361365,-71.062037]
 ];
 
+//The Orange Line has 18 stops
 var OrangeLine = [
 	["Oak Grove",42.43668,-71.07109699999999],
 	["Malden Center",42.426632,-71.07411],
@@ -82,7 +85,48 @@ var OrangeLine = [
 	["Forest Hills",42.300523,-71.113686]
 ];
 
+//Init function
 function init()
+{
+	requestData();
+}
+
+//Requests information from online MBTA json file
+function requestData()
+{
+	request = new XMLHttpRequest();
+	request.open("GET", "http://mbtamap.herokuapp.com/mapper/rodeo.json", true);
+	request.onreadystatechange = dataReady;
+	request.send(null);
+}
+
+//Renders trains iff the correct readyState and request.status are present
+function dataReady()
+{
+	if (request.readyState == 4 && request.status == 200)
+	{
+		init_map();
+		scheduleData = JSON.parse(request.responseText);
+		color = scheduleData["line"];
+		if(color == "red") {
+			trainLine = RedLine.slice(0);
+			renderRedLine();
+		} else if(color == "blue") {
+			trainLine = BlueLine.slice(0);
+			renderBlueLine();
+		} else {			
+			trainLine = OrangeLine.slice(0);
+			renderOrangeLine();
+		}
+	}
+	else if(request.readyState == 4 && request.status == 500)
+	{
+		init();//calls init re-requests data from mbta schedule if there is an error
+	}
+}
+
+//Initalizes map
+function init_map() 
 {
 	getMyLocation();
 	var myOptions = {
@@ -91,9 +135,9 @@ function init()
 		mapTypeId: google.maps.MapTypeId.ROADMAP
 	};
 	map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
-	getData();
 }
 
+//Gets myLat, myLng if geolocation is supported
 function getMyLocation()
 {
 	if (navigator.geolocation){
@@ -101,7 +145,7 @@ function getMyLocation()
             myLat = position.coords.latitude;
             myLng = position.coords.longitude;
             myLocation = new google.maps.LatLng(myLat, myLng)
-            map.panTo(myLocation);
+            map.setCenter(myLocation);
             markMe();
         });
 	} else {
@@ -109,11 +153,13 @@ function getMyLocation()
 	}
 }
 
+//Alerts the user if GeoLocation is not supported
 function notSupported() 
 {
   alert("GeoLocation is not supported");
 }
 
+//Creates and places a new marker with information from myLocation
 function markMe()
 {
   	var marker = new google.maps.Marker({
@@ -124,49 +170,15 @@ function markMe()
   	var closest = find_closest_stop();
 	var infowindow = new google.maps.InfoWindow();
 	infowindow.setContent(
-	  "I am here at " + myLat + ", " + myLng + ". I am approximately " + closest['dist'] +
+	  "I am here at (" + myLat + ", " + myLng + "). </br> I am approximately " + closest['dist'] +
 	  	" miles from " + closest['t_stop'][0] + ", which is the closest T-Stop."
-	  	  
 	);
 	google.maps.event.addListener(marker, 'click', function() {
 	    infowindow.open(map,marker);
 	});
 }
 
-function getData()
-{
-	request = new XMLHttpRequest();
-	request.open("GET", "http://mbtamap.herokuapp.com/mapper/rodeo.json", true);
-	request.onreadystatechange = dataReady;
-	request.send(null);
-}
-
-function dataReady()
-{
-	if (request.readyState == 4 && request.status == 200)
-	{
-		scheduleData = JSON.parse(request.responseText);
-		color = scheduleData["line"];
-		if(color == "red") {
-			trainLine = RedLine;
-			numStops = RedLine.length;
-			renderRedLine();
-		} else if(color == "blue") {
-			trainLine = BlueLine;
-			numStops = BlueLine.length;
-			renderBlueLine();
-		} else {
-			trainLine = OrangeLine;
-			numStops = OrangeLine.length;
-			renderOrangeLine();
-		}
-	}
-	else if(request.readyState == 4 && request.status == 500)
-	{
-		init();//re-requests data from mbta schedule if there is an error
-	}
-}
-
+//Creates RedLine markers, infowindows, and red polyline.
 function renderRedLine()
 {
     for (var i = 0; i < RedLine.length; i++) {  
@@ -187,6 +199,7 @@ function renderRedLine()
 	createPolyline(RedLineCoordinates2);
 }
 
+//Creates BlueLine markers, infowindows, and blue polyline.
 function renderBlueLine()
 {
     for (var i = 0; i < BlueLine.length; i++) {  
@@ -200,6 +213,7 @@ function renderBlueLine()
 	createPolyline(blueLineCoordinates);
 }
 
+//Creates OrangeLine markers, infowindows, and orange polyline.
 function renderOrangeLine()
 {
     for (var i = 0; i < OrangeLine.length; i++) {  
@@ -213,6 +227,8 @@ function renderOrangeLine()
 	createPolyline(orangeLineCoordinates);
 }
 
+//Takes in a trainArray and station and creates a marker using that station's 
+// latitude and longitude
 function createMarker(trainArray, station)
 {
 	if (color == "red"){
@@ -236,6 +252,8 @@ function createMarker(trainArray, station)
     });
 }
 
+//Takes in a trainArray and station_pos and creates the table/infowindow for that 
+// station's marker
 function createTable(trainArray, station_pos)
 {
 	var station = trainArray[station_pos][0];
@@ -243,7 +261,7 @@ function createTable(trainArray, station_pos)
     infoTable = "<div id='name'> Station: " + station;
 
     //sets up infoTable headers
-    infoTable += "</div><table><tr><th>Line: </th>"
+    infoTable += "</div><table><tr><th>Line</th>"
     infoTable += "<th> ID </th><th> Arrives In </th><th> End Destination </th></tr>";
 
     //rest of t_stop information
@@ -267,20 +285,25 @@ function createTable(trainArray, station_pos)
     return infoTable;
 }
 
+// Takes in an array of coordinates and creates a polyline connecting the line's 
+// 	 markers based on the color of the train line.
 function createPolyline(coordinates)
 {
+	polylineColor = color;
 	if (color == "blue") { 
-		color = "3399FF"; //nicer blue color to match PolyLine
+		polylineColor = "3399FF"; //nicer blue color to match PolyLine
 	}
     var polyline = new google.maps.Polyline({
 	    path: coordinates,
-	    strokeColor: color,
+	    strokeColor: polylineColor,
 	    strokeOpacity: 2.0,
 	    strokeWeight: 3
   	});
     polyline.setMap(map);
 }
 
+//Loops through all the stations and calls the calc_dist function
+// to figure out the closest T station to the user
 function find_closest_stop()
 {
 	var temp_closest_stop = "";
@@ -288,7 +311,7 @@ function find_closest_stop()
 	var station_name;
 	var closest =  {"t_stop": temp_closest_stop, "dist": temp_closest_dist}; //will contain the info of the closest stop to users's location
 
-	for (var i = 0; i < numStops; i++) {
+	for (var i = 0; i < trainLine.length; i++) {
 		station_name = trainLine[i];
 		if (calculate_dist(station_name) < temp_closest_dist) {
 			temp_closest_stop = station_name;//replace new closest t_stop
@@ -300,6 +323,8 @@ function find_closest_stop()
 	return closest;
 }
 
+//Calculates the distance between 2 pairs of latitudes/longitudes
+//  http://stackoverflow.com/questions/14560999/using-the-haversine-formula-in-javascript 
 function calculate_dist(station_name)
 {
     var R = 6371; //earth's radius
