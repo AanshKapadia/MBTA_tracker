@@ -139,7 +139,6 @@ function dataReady()
 	{
 		scheduleData = JSON.parse(request.responseText);
 		color = scheduleData["line"];
-		console.log(scheduleData);
 		if(color == "red") {
 			renderRedLine();
 		} else if(color == "blue") {
@@ -157,35 +156,6 @@ function dataReady()
 function renderRedLine()
 {
     for (var i = 0; i < RedLine.length; i++) {  
-
-    	var station;
-    	var destination;
-    	var contentString = "Stop: " + RedLine[i][0] +
-    	  '<div id="content">'+
-	      '<div id="info">'+
-	      '<p>'+
-		      '<table>' +
-  		// 		'<tr>' +
-				//   '<td>' + "Station Name" + '</td>' +
-				//   // '<td>' + "Arrival Schedule" + '</td>' +
-				//   // '<td>' + "Destination Direction" + '</td>' +
-				// '</tr>' +
-				'<tr>' +
-				  '<td>' + RedLine[i][1] + '</td>' +
-				'</tr>' +
-				'<tr>' +
-				  '<td>' + RedLine[i][2] + '</td>' +
-				'</tr>' +
-				// <tr>
-				//   <td>Eve</td>
-				//   <td>Jackson</td> 
-				//   <td>94</td>
-				// </tr>
-				'</table>'+
-			'</p>'+
-	      '</div>'+
-	       '</div>';
-
 	       createMarker(RedLine, i);
     }
 
@@ -208,6 +178,7 @@ function renderBlueLine()
     for (var i = 0; i < BlueLine.length; i++) {  
     	createMarker(BlueLine, i);
     }
+    
 	var blueLineCoordinates = [];
 	for(var i = 0; i < BlueLine.length; i++) {
 		blueLineCoordinates.push(new google.maps.LatLng(BlueLine[i][1], BlueLine[i][2]));
@@ -217,10 +188,10 @@ function renderBlueLine()
 
 function renderOrangeLine()
 {
-
     for (var i = 0; i < OrangeLine.length; i++) {  
     	createMarker(OrangeLine, i);
     }
+
 	var orangeLineCoordinates = [];
 	for(var i = 0; i < OrangeLine.length; i++) {
 		orangeLineCoordinates.push(new google.maps.LatLng(OrangeLine[i][1], OrangeLine[i][2]));
@@ -230,18 +201,48 @@ function renderOrangeLine()
 
 function createMarker(trainArray, station)
 {
+
    	var marker = new google.maps.Marker({
    		position: new google.maps.LatLng(trainArray[station][1], trainArray[station][2]),
   	});
   	marker.setMap(map);
+  	infoWindow = new google.maps.InfoWindow();
 
-  	infowindow = new google.maps.InfoWindow();
-	google.maps.event.addListener(marker, 'click', (function(marker, station) {
-    	return function() {
-      		infowindow.setContent(infoContent);
-      		infowindow.open(map, marker);
-    }
-  })(marker, station));
+	google.maps.event.addListener(marker, 'click', function() {
+      		infoWindow.setContent(createTable(trainArray, station));
+      		infoWindow.open(map, marker);
+    });
+}
+
+function createTable(trainArray, station_pos)
+{
+	var station = trainArray[station_pos][0];
+	var infoTable = document.createElement("table");
+    infoTable = "<div id='name'> Station: " + station;
+
+    //infoTable headers
+    infoTable += "</div><table><tr><th>Line: </th>"
+    infoTable += "<th> ID </th><th> Arrives In </th><th> End Destination </th></tr>";
+
+    //rest of t_stop information
+    var data = scheduleData["schedule"];
+    for (var i = 0; i < data.length; i++) {
+        var t_stop = data[i]["Predictions"];
+        for (var j = 0; j < t_stop.length; j++) {
+            if (station == t_stop[j]["Stop"]) {
+                min = Math.floor(t_stop[j]["Seconds"] / 60);
+                sec = t_stop[j]["Seconds"] % 60;
+                sec = ("0" + sec).slice(-2);
+                infoTable += 
+                	"<tr><td>" + scheduleData["line"] + "</td><td>"
+                  	+ t_stop[j]["StopID"] + "</td><td>"
+                  	+ min + ":" + sec + "</td><td>"
+                  	+ data[i]["Destination"] + "</td></tr>";
+    	    }
+	    }
+    }           	
+    infoTable += "</table>";                              	     
+    return infoTable;
 }
 
 function createPolyline(coordinates)
@@ -254,3 +255,4 @@ function createPolyline(coordinates)
   	});
     polyline.setMap(map);
 }
+
