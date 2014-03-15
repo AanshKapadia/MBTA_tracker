@@ -4,7 +4,7 @@
  * Assignment: 3
  * Summary: 
  * - Finds the User's current position and suggests closest T-station. 
- *	 Also lists the schedule of every train line, and its destination and arrival time.
+ * - Also, lists the schedule of every train line, and its destination and arrival time.
  */
 
 var map;
