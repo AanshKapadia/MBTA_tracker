@@ -201,9 +201,17 @@ function renderOrangeLine()
 
 function createMarker(trainArray, station)
 {
+	if (color == "red"){
+		img = "red_t.png";
+	} else if (color == "blue"){
+		img = "blue_t.png";
+	}else if (color == "orange"){
+		img = "orange_t.png";
+	}
 
    	var marker = new google.maps.Marker({
    		position: new google.maps.LatLng(trainArray[station][1], trainArray[station][2]),
+   		icon: img
   	});
   	marker.setMap(map);
   	infoWindow = new google.maps.InfoWindow();
